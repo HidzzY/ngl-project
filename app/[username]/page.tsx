@@ -1,9 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, use } from "react"; // Tambahkan use di sini
 import { supabase } from "@/lib/supabase";
 import GlassContainer from "@/components/GlassContainer";
 
-export default function SendMessage({ params }: { params: { username: string } }) {
+export default function SendMessage({ params }: { params: Promise<{ username: string }> }) {
+  // Ambil username dengan menggunakan React.use()
+  const resolvedParams = use(params);
+  const username = resolvedParams.username;
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -13,13 +17,17 @@ export default function SendMessage({ params }: { params: { username: string } }
     if (!message.trim()) return;
     setLoading(true);
 
+    // Gunakan username yang sudah di-unwrap
     const { error } = await supabase
       .from('messages')
-      .insert([{ receiver_username: params.username, content: message }]);
+      .insert([{ receiver_username: username, content: message }]);
 
     if (!error) {
       setSent(true);
       setMessage("");
+    } else {
+      console.error("Error sending message:", error);
+      alert("Gagal mengirim pesan, coba lagi nanti.");
     }
     setLoading(false);
   };
@@ -28,7 +36,9 @@ export default function SendMessage({ params }: { params: { username: string } }
     <div className="min-h-screen bg-[#191919] flex items-center justify-center p-4">
       <GlassContainer className="w-full max-w-md rounded-[2.5rem] p-8 text-center">
         <div className="w-20 h-20 bg-gradient-to-tr from-orange-500 to-pink-600 rounded-full mx-auto mb-4 shadow-lg shadow-orange-500/20" />
-        <h1 className="text-white text-xl font-bold">@{params.username}</h1>
+        
+        {/* Sekarang panggil username tanpa params. */}
+        <h1 className="text-white text-xl font-bold">@{username}</h1>
         <p className="text-gray-400 text-sm mb-8">kirim pesan rahasia ke saya!</p>
 
         {!sent ? (
